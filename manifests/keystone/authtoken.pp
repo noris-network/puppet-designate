@@ -184,15 +184,17 @@
 #  reduce performance. Only valid for PKI tokens. Integer value
 #  Defaults to $::os_service_default.
 #
-# [*signing_dir*]
-#  (Optional) Directory used to cache files related to PKI tokens.
-#  Defaults to $::os_service_default.
-#
 # [*token_cache_time*]
 #  (Optional) In order to prevent excessive effort spent validating tokens,
 #  the middleware caches previously-seen tokens for a configurable duration
 #  (in seconds). Set to -1 to disable caching completely. Integer value
 #  Defaults to $::os_service_default.
+#
+# DEPRECATED PARAMETERS
+#
+# [*signing_dir*]
+#   (Optional) Directory used to cache files related to PKI tokens.
+#   Defaults to undef
 #
 class designate::keystone::authtoken(
   $username                       = 'designate',
@@ -229,27 +231,27 @@ class designate::keystone::authtoken(
   $manage_memcache_package        = false,
   $region_name                    = $::os_service_default,
   $revocation_cache_time          = $::os_service_default,
-  $signing_dir                    = $::os_service_default,
   $token_cache_time               = $::os_service_default,
+  # DEPRECATED PARAMETERS
+  $signing_dir                    = undef,
 ) {
 
-  if is_service_default($password) and ! $::designate::api::keystone_password {
+  include ::designate::deps
+
+  if is_service_default($password) {
     fail('Please set password for designate service user')
   }
 
-  $username_real = pick($::designate::api::keystone_user,$username)
-  $password_real = pick($::designate::api::keystone_password,$password)
-  $project_name_real = pick($::designate::api::keystone_tenant,$project_name)
-  $auth_uri_real = pick($::designate::api::auth_uri,$auth_uri)
-  $auth_url_real = pick($::designate::api::auth_url,$auth_url)
-  $memcached_servers_real = pick($::designate::api::keystone_memcached_servers,$memcached_servers)
+  if $signing_dir {
+    warning('signing_dir parameter is deprecated, has no effect and will be removed in the P release.')
+  }
 
   keystone::resource::authtoken { 'designate_config':
-    username                       => $username_real,
-    password                       => $password_real,
-    project_name                   => $project_name_real,
-    auth_url                       => $auth_url_real,
-    auth_uri                       => $auth_uri_real,
+    username                       => $username,
+    password                       => $password,
+    project_name                   => $project_name,
+    auth_url                       => $auth_url,
+    auth_uri                       => $auth_uri,
     auth_version                   => $auth_version,
     auth_type                      => $auth_type,
     auth_section                   => $auth_section,
@@ -279,7 +281,6 @@ class designate::keystone::authtoken(
     manage_memcache_package        => $manage_memcache_package,
     region_name                    => $region_name,
     revocation_cache_time          => $revocation_cache_time,
-    signing_dir                    => $signing_dir,
     token_cache_time               => $token_cache_time,
   }
 }

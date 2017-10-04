@@ -4,15 +4,15 @@
 require 'spec_helper'
 
 describe 'designate::api' do
+
+  let :pre_condition do
+    "class { '::designate::keystone::authtoken':
+      password => 'a_big_secret',
+    }"
+  end
+
   let :params do
-    {
-      :keystone_password => 'passw0rd',
-      :keystone_host     => '10.0.0.42',
-      :keystone_port     => '35357',
-      :keystone_protocol => 'https',
-      :keystone_tenant   => '_services_',
-      :keystone_user     => 'designate',
-    }
+    {}
   end
 
   shared_examples 'designate-api' do
@@ -32,33 +32,71 @@ describe 'designate::api' do
       end
 
       it 'configures designate-api with default parameters' do
-        is_expected.to contain_designate_config('service:api/auth_strategy').with_value('noauth')
-        is_expected.to contain_designate_config('service:api/enable_api_v1').with_value(true)
-        is_expected.to contain_designate_config('service:api/enable_api_v2').with_value(false)
-        is_expected.to contain_designate_config('service:api/enable_api_admin').with_value(false)
-        is_expected.to contain_designate_config('service:api/api_host').with_value('0.0.0.0')
-        is_expected.to contain_designate_config('service:api/api_port').with_value('9001')
+        is_expected.to contain_designate_config('service:api/auth_strategy').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/enable_api_v1').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/enable_api_v2').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/enable_api_admin').with_value('<SERVICE DEFAULT>')
         is_expected.to contain_designate_config('service:api/api_base_uri').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/listen').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/workers').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/threads').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/enable_host_header').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/max_header_line').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/default_limit_admin').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/max_limit_admin').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/default_limit_v2').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/max_limit_v2').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/pecan_debug').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/enabled_extensions_v1').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/enabled_extensions_v2').with_value('<SERVICE DEFAULT>')
+        is_expected.to contain_designate_config('service:api/enabled_extensions_admin').with_value('<SERVICE DEFAULT>')
         is_expected.to_not contain_designate__keystone__authtoken('designate_config')
       end
+    end
 
-      context 'when using auth against keystone' do
-        before { params.merge!(:auth_strategy => 'keystone') }
-        it 'configures designate-api with keystone auth strategy' do
-          is_expected.to contain_designate_config('service:api/auth_strategy').with_value('keystone')
-        end
+    context 'when overriding parameters' do
+      before do
+        params.merge!({
+          :auth_strategy                 => 'noauth',
+          :enable_api_v1                 => false,
+          :enable_api_v2                 => true,
+          :enable_api_admin              => true,
+          :api_base_uri                  => 'http://myhost.es:9001/',
+          :listen                        => '0.0.0.0:9001',
+          :workers                       => '10',
+          :threads                       => '1500',
+          :enable_host_header            => true,
+          :max_header_line               => '17777',
+          :default_limit_admin           => '25',
+          :max_limit_admin               => '1500',
+          :default_limit_v2              => '25',
+          :max_limit_v2                  => '1500',
+          :pecan_debug                   => true,
+          :enabled_extensions_v1         => 'diagnostics,quotas,reports,sync,touch',
+          :enabled_extensions_v2         => 'experimental',
+          :enabled_extensions_admin      => 'reports,quotas,counts,tenants,target_sync',
+        })
       end
 
-      context 'when using memcached with  keystone auth' do
-        before do
-          params.merge!(
-            :keystone_memcached_servers => [ '127.0.0.1:11211', '127.0.0.1:11212' ],
-            :auth_strategy => 'keystone',
-          )
-        end
-        it 'configures designate-api with keystone memcached servers' do
-            is_expected.to contain_designate_config('keystone_authtoken/memcached_servers').with_value('127.0.0.1:11211,127.0.0.1:11212')
-        end
+      it 'configure service_api' do
+        is_expected.to contain_designate_config('service:api/auth_strategy').with_value(params[:auth_strategy])
+        is_expected.to contain_designate_config('service:api/enable_api_v1').with_value(params[:enable_api_v1])
+        is_expected.to contain_designate_config('service:api/enable_api_v2').with_value(params[:enable_api_v2])
+        is_expected.to contain_designate_config('service:api/enable_api_admin').with_value(params[:enable_api_admin])
+        is_expected.to contain_designate_config('service:api/api_base_uri').with_value(params[:api_base_uri])
+        is_expected.to contain_designate_config('service:api/listen').with_value(params[:listen])
+        is_expected.to contain_designate_config('service:api/workers').with_value(params[:workers])
+        is_expected.to contain_designate_config('service:api/threads').with_value(params[:threads])
+        is_expected.to contain_designate_config('service:api/enable_host_header').with_value(params[:enable_host_header])
+        is_expected.to contain_designate_config('service:api/max_header_line').with_value(params[:max_header_line])
+        is_expected.to contain_designate_config('service:api/default_limit_admin').with_value(params[:default_limit_admin])
+        is_expected.to contain_designate_config('service:api/max_limit_admin').with_value(params[:max_limit_admin])
+        is_expected.to contain_designate_config('service:api/default_limit_v2').with_value(params[:default_limit_v2])
+        is_expected.to contain_designate_config('service:api/max_limit_v2').with_value(params[:max_limit_v2])
+        is_expected.to contain_designate_config('service:api/pecan_debug').with_value(params[:pecan_debug])
+        is_expected.to contain_designate_config('service:api/enabled_extensions_v1').with_value(params[:enabled_extensions_v1])
+        is_expected.to contain_designate_config('service:api/enabled_extensions_v2').with_value(params[:enabled_extensions_v2])
+        is_expected.to contain_designate_config('service:api/enabled_extensions_admin').with_value(params[:enabled_extensions_admin])
       end
     end
 
@@ -75,38 +113,6 @@ describe 'designate::api' do
         )
       end
     end
-
-    context 'with backwards compatible parameters' do
-      let :params do
-        {
-          :auth_strategy     => 'keystone',
-          :keystone_password => 'passw0rd',
-          :keystone_host     => '10.0.0.42',
-          :keystone_port     => '35357',
-          :keystone_protocol => 'https',
-          :keystone_tenant   => '_services_',
-          :keystone_user     => 'designate',
-        }
-      end
-
-      it 'configures designate-api with correct parameters' do
-        is_expected.to contain_designate_config('service:api/auth_strategy').with_value('keystone')
-        is_expected.to contain_designate_config('service:api/enable_api_v1').with_value(true)
-        is_expected.to contain_designate_config('service:api/enable_api_v2').with_value(false)
-        is_expected.to contain_designate_config('service:api/enable_api_admin').with_value(false)
-        is_expected.to contain_designate_config('service:api/api_host').with_value('0.0.0.0')
-        is_expected.to contain_designate_config('service:api/api_port').with_value('9001')
-        is_expected.to contain_designate_config('service:api/api_base_uri').with_value('<SERVICE DEFAULT>')
-        is_expected.to contain_designate_config('keystone_authtoken/auth_url').with_value('https://10.0.0.42:35357')
-        is_expected.to contain_designate_config('keystone_authtoken/auth_uri').with_value('https://10.0.0.42:35357')
-        is_expected.to contain_designate_config('keystone_authtoken/project_name').with_value('_services_')
-        is_expected.to contain_designate_config('keystone_authtoken/username').with_value('designate')
-        is_expected.to contain_designate_config('keystone_authtoken/password').with_value('passw0rd')
-
-      end
-
-    end
-
   end
 
   on_supported_os({

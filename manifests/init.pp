@@ -34,41 +34,48 @@
 #
 # [*log_dir*]
 #   (optional) Directory where logs should be stored.
-#   If set to boolean false, it will not log to any directory.
+#   If set to $::os_service_default, it will not log to any directory.
 #   Defaults to undef
 #
 # [*root_helper*]
 #   (optional) Command for designate rootwrap helper.
 #   Defaults to 'sudo designate-rootwrap /etc/designate/rootwrap.conf'.
 #
-# [*rabbit_host*]
-#   (optional) Location of rabbitmq installation.
-#   Defaults to '127.0.0.1'
+# [*rpc_backend*]
+#   (optional) The messaging driver to use. Currently only rabbit is support
+#   by this puppet module.
+#   Defaults to 'rabbit'.
 #
-# [*rabbit_port*]
-#   (optional) Port for rabbitmq instance.
-#   Defaults to '5672'
+# [*default_transport_url*]
+#   (optional) A URL representing the messaging driver to use and its full
+#   configuration. Transport URLs take the form:
+#     transport://user:pass@host1:port[,hostN:portN]/virtual_host
+#   Defaults to $::os_service_default
 #
-# [*rabbit_hosts*]
-#   (Optional) Array of host:port (used with HA queues).
-#   If defined, will remove rabbit_host & rabbit_port parameters from config
-#   Defaults to undef.
+# [*rpc_response_timeout*]
+#  (Optional) Seconds to wait for a response from a call.
+#  Defaults to $::os_service_default
 #
-# [*rabbit_password*]
-#   (optional) Password used to connect to rabbitmq.
-#   Defaults to 'guest'
+# [*control_exchange*]
+#   (Optional) The default exchange under which topics are scoped. May be
+#   overridden by an exchange name specified in the transport_url
+#   option.
+#   Defaults to $::os_service_default
 #
-# [*rabbit_userid*]
-#   (optional) User used to connect to rabbitmq.
-#   Defaults to 'guest'
-#
-# [*rabbit_virtual_host*]
-#   (optional) The RabbitMQ virtual host.
-#   Defaults to '/'
+# [*notification_transport_url*]
+#   (optional) Connection url for oslo messaging notification backend. An
+#   example rabbit url would be, rabbit://user:pass@host:port/virtual_host
+#   Defaults to $::os_service_default
 #
 # [*rabbit_use_ssl*]
 #   (optional) Connect over SSL for RabbitMQ
 #   Defaults to false
+#
+# [*rabbit_ha_queues*]
+#   (optional) Use HA queues in RabbitMQ (x-ha-policy: all). If you change this
+#   option, you must wipe the RabbitMQ database. (boolean value). Currently,
+#   this value is set to true when rabbit_hosts is configured. This will change
+#   during the Pike cycle where we will no longer do this check.
 #
 # [*kombu_ssl_ca_certs*]
 #   (optional) SSL certification authority file (valid only if SSL enabled).
@@ -112,42 +119,64 @@
 #   (optional) DEPRECATED. Use rabbit_virtual_host
 #   Defaults to undef.
 #
-# [*verbose*]
-#   (optional) Deprecated. should the daemons log verbose messages.
-#   Defaults to undef
+# [*rabbit_host*]
+#   (optional) Location of rabbitmq installation.
+#   Defaults to $::os_service_default
+#
+# [*rabbit_port*]
+#   (optional) Port for rabbitmq instance.
+#   Defaults to $::os_service_default
+#
+# [*rabbit_hosts*]
+#   (Optional) Array of host:port (used with HA queues).
+#   If defined, will remove rabbit_host & rabbit_port parameters from config
+#   Defaults to $::os_service_default
+#
+# [*rabbit_password*]
+#   (optional) Password used to connect to rabbitmq.
+#   Defaults to $::os_service_default
+#
+# [*rabbit_userid*]
+#   (optional) User used to connect to rabbitmq.
+#   Defaults to $::os_service_default
+#
+# [*rabbit_virtual_host*]
+#   (optional) The RabbitMQ virtual host.
+#   Defaults to $::os_service_default
 #
 class designate(
-  $package_ensure        = present,
-  $common_package_name   = $::designate::params::common_package_name,
-  $debug                 = undef,
-  $log_dir               = undef,
-  $use_syslog            = undef,
-  $use_stderr            = undef,
-  $log_facility          = undef,
-  $root_helper           = 'sudo designate-rootwrap /etc/designate/rootwrap.conf',
-  $rabbit_host           = '127.0.0.1',
-  $rabbit_port           = '5672',
-  $rabbit_hosts          = false,
-  $rabbit_userid         = 'guest',
-  $rabbit_password       = '',
-  $rabbit_virtual_host   = '/',
-  $rabbit_use_ssl        = false,
-  $kombu_ssl_ca_certs    = $::os_service_default,
-  $kombu_ssl_certfile    = $::os_service_default,
-  $kombu_ssl_keyfile     = $::os_service_default,
-  $kombu_ssl_version     = $::os_service_default,
-  $kombu_reconnect_delay = $::os_service_default,
-  $notification_driver   = 'messaging',
-  $notification_topics   = 'notifications',
-  $purge_config          = false,
+  $package_ensure             = present,
+  $common_package_name        = $::designate::params::common_package_name,
+  $debug                      = undef,
+  $log_dir                    = undef,
+  $use_syslog                 = undef,
+  $use_stderr                 = undef,
+  $log_facility               = undef,
+  $root_helper                = 'sudo designate-rootwrap /etc/designate/rootwrap.conf',
+  $rpc_backend                = 'rabbit',
+  $notification_transport_url = $::os_service_default,
+  $rabbit_use_ssl             = false,
+  $rabbit_ha_queues           = $::os_service_default,
+  $kombu_ssl_ca_certs         = $::os_service_default,
+  $kombu_ssl_certfile         = $::os_service_default,
+  $kombu_ssl_keyfile          = $::os_service_default,
+  $kombu_ssl_version          = $::os_service_default,
+  $kombu_reconnect_delay      = $::os_service_default,
+  $notification_driver        = 'messaging',
+  $default_transport_url      = $::os_service_default,
+  $rpc_response_timeout       = $::os_service_default,
+  $control_exchange           = $::os_service_default,
+  $notification_topics        = 'notifications',
+  $purge_config               = false,
   #DEPRECATED PARAMETER
-  $rabbit_virtualhost    = undef,
-  $verbose               = undef,
+  $rabbit_virtualhost         = undef,
+  $rabbit_host                = $::os_service_default,
+  $rabbit_port                = $::os_service_default,
+  $rabbit_hosts               = $::os_service_default,
+  $rabbit_userid              = $::os_service_default,
+  $rabbit_password            = $::os_service_default,
+  $rabbit_virtual_host        = $::os_service_default,
 ) inherits designate::params {
-
-  if $verbose {
-    warning('verbose is deprecated, has no effect and will be removed after Newton cycle.')
-  }
 
   if $rabbit_virtualhost {
     warning('The parameter rabbit_virtualhost is deprecated, use rabbit_virtual_host.')
@@ -170,6 +199,32 @@ class designate(
     fail('The kombu_ssl_certfile and kombu_ssl_keyfile parameters must be used together')
   }
 
+  if !is_service_default($rabbit_host) or
+    !is_service_default($rabbit_hosts) or
+    !is_service_default($rabbit_password) or
+    !is_service_default($rabbit_port) or
+    !is_service_default($rabbit_userid) or
+    !is_service_default($rabbit_virtual_host) {
+    warning("designate::rabbit_host, designate::rabbit_hosts, designate::rabbit_password, \
+designate::rabbit_port, designate::rabbit_userid and designate::rabbit_virtual_host are \
+deprecated. Please use designate::default_transport_url instead.")
+  }
+
+  if is_service_default($rabbit_ha_queues) {
+    warning("designate::rabbit_ha_queues will be changed to use the service default \
+durring the Pike cycle. Currently it is automatically configured based on the setting of \
+designate::rabbit_hosts which has been deprecated. Please consider defining this variable \
+to your desired configuration.")
+    if !is_service_default($rabbit_hosts) {
+      $rabbit_ha_queues_real = true
+    } else {
+      $rabbit_ha_queues_real = false
+    }
+  } else {
+    $rabbit_ha_queues_real = $rabbit_ha_queues
+  }
+
+  include ::designate::deps
   include ::designate::logging
 
   exec { 'post-designate_config':
@@ -177,7 +232,7 @@ class designate(
     refreshonly => true,
   }
 
-  Designate_config<| |> ~> Exec['post-designate_config']
+  Anchor['designate::config::end'] ~> Exec['post-designate_config']
 
   package { 'designate-common':
     ensure => $package_ensure,
@@ -189,58 +244,39 @@ class designate(
     purge => $purge_config,
   }
 
-  designate_config {
-    'oslo_messaging_rabbit/rabbit_userid'          : value => $rabbit_userid;
-    'oslo_messaging_rabbit/rabbit_password'        : value => $rabbit_password, secret => true;
-    'oslo_messaging_rabbit/rabbit_virtual_host'    : value => $rabbit_virtual_host_real;
-    'oslo_messaging_rabbit/rabbit_use_ssl'         : value => $rabbit_use_ssl;
-    'oslo_messaging_rabbit/kombu_ssl_ca_certs'     : value => $kombu_ssl_ca_certs;
-    'oslo_messaging_rabbit/kombu_ssl_certfile'     : value => $kombu_ssl_certfile;
-    'oslo_messaging_rabbit/kombu_ssl_keyfile'      : value => $kombu_ssl_keyfile;
-    'oslo_messaging_rabbit/kombu_ssl_version'      : value => $kombu_ssl_version;
-    'oslo_messaging_rabbit/kombu_reconnect_delay'  : value => $kombu_reconnect_delay;
+  if $rpc_backend == 'rabbit' {
+    oslo::messaging::rabbit { 'designate_config':
+      kombu_ssl_version     => $kombu_ssl_version,
+      kombu_ssl_keyfile     => $kombu_ssl_keyfile,
+      kombu_ssl_certfile    => $kombu_ssl_certfile,
+      kombu_ssl_ca_certs    => $kombu_ssl_ca_certs,
+      kombu_reconnect_delay => $kombu_reconnect_delay,
+      rabbit_host           => $rabbit_host,
+      rabbit_port           => $rabbit_port,
+      rabbit_hosts          => $rabbit_hosts,
+      rabbit_use_ssl        => $rabbit_use_ssl,
+      rabbit_userid         => $rabbit_userid,
+      rabbit_password       => $rabbit_password,
+      rabbit_virtual_host   => $rabbit_virtual_host,
+      rabbit_ha_queues      => $rabbit_ha_queues_real,
+    }
+  }
+  oslo::messaging::default { 'designate_config':
+    transport_url        => $default_transport_url,
+    rpc_response_timeout => $rpc_response_timeout,
+    control_exchange     => $control_exchange,
   }
 
-  if $rabbit_hosts {
-    designate_config { 'oslo_messaging_rabbit/rabbit_hosts':     value => join($rabbit_hosts, ',') }
-    designate_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value => true }
-    designate_config { 'oslo_messaging_rabbit/rabbit_host':      ensure => absent }
-    designate_config { 'oslo_messaging_rabbit/rabbit_port':      ensure => absent }
-  } else {
-    designate_config { 'oslo_messaging_rabbit/rabbit_host':      value => $rabbit_host }
-    designate_config { 'oslo_messaging_rabbit/rabbit_port':      value => $rabbit_port }
-    designate_config { 'oslo_messaging_rabbit/rabbit_hosts':     value => "${rabbit_host}:${rabbit_port}" }
-    designate_config { 'oslo_messaging_rabbit/rabbit_ha_queues': value => false }
+  oslo::messaging::notifications { 'designate_config':
+    driver        => $notification_driver,
+    transport_url => $notification_transport_url,
+    topics        => $notification_topics,
   }
 
   # default setting
   designate_config {
     'DEFAULT/root_helper'            : value => $root_helper;
     'DEFAULT/state_path'             : value => $::designate::params::state_path;
-    'DEFAULT/notification_driver'    : value => $notification_driver;
-    'DEFAULT/notification_topics'    : value => $notification_topics;
   }
 
-  # Setup anchors for install, config and service phases of the module.  These
-  # anchors allow external modules to hook the begin and end of any of these
-  # phases.  Package or service management can also be replaced by ensuring the
-  # package is absent or turning off service management and having the
-  # replacement depend on the appropriate anchors.  When applicable, end tags
-  # should be notified so that subscribers can determine if installation,
-  # config or service state changed and act on that if needed.
-  anchor { 'designate::install::begin': } ->
-  Package<| tag == 'designate-package'|> ~>
-  anchor { 'designate::install::end': }
-  ->
-  anchor { 'designate::config::begin': } ->
-  Designate_config<||> ~>
-  anchor { 'designate::config::end': }
-  ->
-  anchor { 'designate::service::begin': } ~>
-  Service<| tag == 'designate-service' |> ~>
-  anchor { 'designate::service::end': }
-
-  # Package installation or config changes will always restart services.
-  Anchor['designate::install::end'] ~> Anchor['designate::service::begin']
-  Anchor['designate::config::end']  ~> Anchor['designate::service::begin']
 }

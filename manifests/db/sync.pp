@@ -14,6 +14,7 @@ class designate::db::sync(
   $extra_params = undef,
 ) {
 
+  include ::designate::deps
   include ::designate::params
 
   exec { 'designate-dbsync':
@@ -21,9 +22,15 @@ class designate::db::sync(
     path        => '/usr/bin',
     user        => 'root',
     refreshonly => true,
+    try_sleep   => 5,
+    tries       => 10,
     logoutput   => on_failure,
-    subscribe   => Anchor['designate::config::end'],
-    notify      => Anchor['designate::service::begin'],
+    subscribe   => [
+      Anchor['designate::install::end'],
+      Anchor['designate::config::end'],
+      Anchor['designate::dbsync::begin']
+    ],
+    notify      => Anchor['designate::dbsync::end'],
   }
 
 }
