@@ -120,15 +120,15 @@ class designate::pool_manager(
       name   => pick($pool_manager_package_name, $::designate::params::pool_manager_package_name),
       tag    => ['openstack', 'designate-package'],
     }
-  }
 
-  service { 'designate-pool-manager':
-    ensure     => $service_ensure,
-    name       => $::designate::params::pool_manager_service_name,
-    enable     => $enabled,
-    hasstatus  => true,
-    hasrestart => true,
-    tag        => ['openstack', 'designate-service'],
+    service { 'designate-pool-manager':
+      ensure     => $service_ensure,
+      name       => $::designate::params::pool_manager_service_name,
+      enable     => $enabled,
+      hasstatus  => true,
+      hasrestart => true,
+      tag        => ['openstack', 'designate-service'],
+    }
   }
 
   designate_config {

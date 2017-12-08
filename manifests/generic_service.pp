@@ -80,14 +80,14 @@ the future release. Please use designate::generic_service::package_ensure instea
       } else {
         $service_ensure = 'stopped'
       }
-    }
 
-    service { $designate_title:
-      ensure    => $service_ensure,
-      name      => $service_name,
-      enable    => $enabled,
-      hasstatus => true,
-      tag       => ['openstack','designate-service'],
+      service { $designate_title:
+        ensure    => $service_ensure,
+        name      => $service_name,
+        enable    => $enabled,
+        hasstatus => true,
+        tag       => ['openstack','designate-service'],
+      }
     }
   }
 }
